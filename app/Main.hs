@@ -48,6 +48,7 @@ instance FromJSON Address
 
 type TestAPI = InAndOutAPI '[Int,Text] ["int","text"]
 type TestAPI2 = InAndOutAPI '[User,Address] ["user","address"]
+type TestAPI3 = InAndOut2API '[User,Address]
 
 server :: Server TestAPI
 server = return :<|> return
@@ -58,6 +59,7 @@ testAPI = Proxy
 app1 :: Application
 app1 = serve testAPI server
 
+
 server2 :: Server TestAPI2
 server2 = return :<|> return
 
@@ -67,10 +69,26 @@ testAPI2 = Proxy
 app2 :: Application
 app2 = serve testAPI2 server2
 
-main = run 8081 app2
 
+server3 :: Server TestAPI3
+server3 = return :<|> return
+
+testAPI3 :: Proxy TestAPI3
+testAPI3 = Proxy
+
+app3 :: Application
+app3 = serve testAPI3 server3
+
+main = run 8081 app3
+
+-- server1
 -- curl -i -d '123' -H 'Content-type: application/json' -X POST http://localhost:8081/int
 -- curl -i -d '"hello"' -H 'Content-type: application/json' -X POST http://localhost:8081/text
 
+-- server2
 -- curl -i -d '{"name":"Javier","age":35}' -H 'Content-type: application/json' -X POST http://localhost:8081/user
 -- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/address
+
+-- server3
+-- curl -i -d '{"name":"Javier","age":35}' -H 'Content-type: application/json' -X POST http://localhost:8081/User
+-- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/Address
