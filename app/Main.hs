@@ -46,9 +46,9 @@ data Address =
 instance ToJSON Address
 instance FromJSON Address
 
-type TestAPI = InAndOutAPI '[Int,Text] ["int","text"]
-type TestAPI2 = InAndOutAPI '[User,Address] ["user","address"]
-type TestAPI3 = InAndOut2API '[User,Address]
+type TestAPI  = InAndOutWithRouteNamesAPI '[Int,Text] ["int","text"]
+type TestAPI2 = InAndOutWithRouteNamesAPI '[User,Address] ["user","address"]
+type TestAPI3 = InAndOutAPI '[User,Address]
 
 server :: Server TestAPI
 server = return :<|> return
@@ -72,6 +72,7 @@ app2 = serve testAPI2 server2
 
 server3 :: Server TestAPI3
 server3 = return :<|> return
+
 
 testAPI3 :: Proxy TestAPI3
 testAPI3 = Proxy
