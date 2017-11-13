@@ -30,6 +30,8 @@ import Servant
 -- | Each route with a manually provided name will be of type 'InAndOut'.
 type InAndOutWithRouteNames a b = (b :: Symbol) :> ReqBody '[JSON] a :> Post '[JSON] a
 
+type InAndOutListWithRouteNames a b = (b :: Symbol) :> ReqBody '[JSON] [a] :> Post '[JSON] [a]
+
 -- | 'InAndOutAPI' is a collection of POST routes that will receive a JSON
 --   object in the Request body, deserialize to Haskell, serialize it from
 --   Haskell to JSON and return it in the Response body. Use this to
@@ -39,6 +41,10 @@ type InAndOutWithRouteNames a b = (b :: Symbol) :> ReqBody '[JSON] a :> Post '[J
 type family InAndOutWithRouteNamesAPI (xs :: [*]) (ys :: [Symbol]) where
   InAndOutWithRouteNamesAPI (a ': '[]) (b ': '[]) = InAndOutWithRouteNames a b
   InAndOutWithRouteNamesAPI (a ': as)  (b ': bs)  = (InAndOutWithRouteNames a b) :<|> InAndOutWithRouteNamesAPI as bs
+
+type family InAndOutListWithRouteNamesAPI (xs :: [*]) (ys :: [Symbol]) where
+  InAndOutListWithRouteNamesAPI (a ': '[]) (b ': '[]) = InAndOutListWithRouteNames a b
+  InAndOutListWithRouteNamesAPI (a ': as)  (b ': bs)  = (InAndOutListWithRouteNames a b) :<|> InAndOutListWithRouteNamesAPI as bs
 
 
 -- ===========
@@ -60,6 +66,9 @@ type family TypeName a :: Symbol where
 
 type InAndOut a = (TypeName a) :> ReqBody '[JSON] a :> Post '[JSON] a
 
+type InAndOutList a = (TypeName a) :> ReqBody '[JSON] [a] :> Post '[JSON] [a]
+
+
 -- | 'InAndOutAPI' is a collection of POST routes that will receive a JSON
 --   object in the Request body, deserialize to Haskell, serialize it from
 --   Haskell to JSON and return it in the Response body. This will automatically
@@ -68,6 +77,11 @@ type InAndOut a = (TypeName a) :> ReqBody '[JSON] a :> Post '[JSON] a
 type family InAndOutAPI (xs :: [*]) where
   InAndOutAPI (a ': '[]) = InAndOut a
   InAndOutAPI (a ': as) = (InAndOut a) :<|> InAndOutAPI as
+
+
+type family InAndOutListAPI (xs :: [*]) where
+  InAndOutListAPI (a ': '[]) = InAndOutList a
+  InAndOutListAPI (a ': as) = (InAndOutList a) :<|> InAndOutListAPI as
 
 {-
 class Returns (lst :: [*]) where

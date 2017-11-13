@@ -49,6 +49,8 @@ instance FromJSON Address
 type TestAPI  = InAndOutWithRouteNamesAPI '[Int,Text] ["int","text"]
 type TestAPI2 = InAndOutWithRouteNamesAPI '[User,Address] ["user","address"]
 type TestAPI3 = InAndOutAPI '[User,Address]
+type TestAPI4 = InAndOutListWithRouteNamesAPI '[User,Address] ["user","address"]
+type TestAPI5 = InAndOutListAPI '[User,Address]
 
 server :: Server TestAPI
 server = return :<|> return
@@ -69,10 +71,8 @@ testAPI2 = Proxy
 app2 :: Application
 app2 = serve testAPI2 server2
 
-
 server3 :: Server TestAPI3
 server3 = return :<|> return
-
 
 testAPI3 :: Proxy TestAPI3
 testAPI3 = Proxy
@@ -80,7 +80,25 @@ testAPI3 = Proxy
 app3 :: Application
 app3 = serve testAPI3 server3
 
-main = run 8081 app3
+server4 :: Server TestAPI4
+server4 = return :<|> return
+
+testAPI4 :: Proxy TestAPI4
+testAPI4 = Proxy
+
+app4 :: Application
+app4 = serve testAPI4 server4
+
+server5 :: Server TestAPI5
+server5 = return :<|> return
+
+testAPI5 :: Proxy TestAPI5
+testAPI5 = Proxy
+
+app5 :: Application
+app5 = serve testAPI5 server5
+
+main = run 8081 app4
 
 -- server1
 -- curl -i -d '123' -H 'Content-type: application/json' -X POST http://localhost:8081/int
@@ -91,5 +109,13 @@ main = run 8081 app3
 -- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/address
 
 -- server3
+-- curl -i -d '{"name":"Javier","age":35}' -H 'Content-type: application/json' -X POST http://localhost:8081/User
+-- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/Address
+
+-- server4
+-- curl -i -d '[{"name":"Javier","age":35},{"name":"Antonio","age":43}]' -H 'Content-type: application/json' -X POST http://localhost:8081/user
+-- curl -i -d '[{"street":"La Casa Blanca","zipcode":"12345"},{"street":"Palacio de la Moncloa","zipcode":"33333"}]' -H 'Content-type: application/json' -X POST http://localhost:8081/address
+
+-- server5
 -- curl -i -d '{"name":"Javier","age":35}' -H 'Content-type: application/json' -X POST http://localhost:8081/User
 -- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/Address
