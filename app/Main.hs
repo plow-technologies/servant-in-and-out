@@ -10,6 +10,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -50,7 +51,7 @@ type TestAPI  = InAndOutWithRouteNamesAPI '[Int,Text] ["int","text"]
 type TestAPI2 = InAndOutWithRouteNamesAPI '[User,Address] ["user","address"]
 type TestAPI3 = InAndOutAPI '[User,Address]
 type TestAPI4 = InAndOutListWithRouteNamesAPI '[User,Address] ["user","address"]
-type TestAPI5 = InAndOutListAPI '[User,Address]
+type TestAPI5 = InAndOutListAPI '[User,Address,Text]
 
 server :: Server TestAPI
 server = return :<|> return
@@ -89,8 +90,9 @@ testAPI4 = Proxy
 app4 :: Application
 app4 = serve testAPI4 server4
 
-server5 :: Server TestAPI5
-server5 = return :<|> return
+--server5 :: Server TestAPI5
+--server5 = return :<|> return
+$(mkServer "server5" "TestAPI5" 3)
 
 testAPI5 :: Proxy TestAPI5
 testAPI5 = Proxy
@@ -98,7 +100,14 @@ testAPI5 = Proxy
 app5 :: Application
 app5 = serve testAPI5 server5
 
-main = run 8081 app4
+$(genCurries 20)
+$(mkPure "thing")
+{- curry1 -}
+
+main = do
+  r <- thingServer 1
+  print r
+  run 8081 app5
 
 -- server1
 -- curl -i -d '123' -H 'Content-type: application/json' -X POST http://localhost:8081/int
@@ -117,5 +126,5 @@ main = run 8081 app4
 -- curl -i -d '[{"street":"La Casa Blanca","zipcode":"12345"},{"street":"Palacio de la Moncloa","zipcode":"33333"}]' -H 'Content-type: application/json' -X POST http://localhost:8081/address
 
 -- server5
--- curl -i -d '{"name":"Javier","age":35}' -H 'Content-type: application/json' -X POST http://localhost:8081/User
--- curl -i -d '{"street":"La Casa Blanca","zipcode":"12345"}' -H 'Content-type: application/json' -X POST http://localhost:8081/Address
+-- curl -i -d '[{"name":"Javier","age":35}]' -H 'Content-type: application/json' -X POST http://localhost:8081/User
+-- curl -i -d '[{"street":"La Casa Blanca","zipcode":"12345"}]' -H 'Content-type: application/json' -X POST http://localhost:8081/Address

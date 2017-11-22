@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -15,13 +16,24 @@
 
 module Servant.InAndOut where
 
-import Data.Aeson
+-- base
+import Control.Monad
 import Data.List (intersperse)
-import Data.Text (Text)
 import GHC.Generics
 import GHC.TypeLits
-import Servant.API
+
+-- template-haskell
+import Language.Haskell.TH
+
+-- text
+import Data.Text (Text)
+
+-- aeson
+import Data.Aeson
+
+-- servant
 import Servant
+import Servant.API
 
 -- =========================
 -- InAndOutWithRouteNamesAPI
@@ -83,6 +95,58 @@ type family InAndOutListAPI (xs :: [*]) where
   InAndOutListAPI (a ': '[]) = InAndOutList a
   InAndOutListAPI (a ': as) = (InAndOutList a) :<|> InAndOutListAPI as
 
+
+
+curryN :: Int -> Q Exp
+curryN n = do
+  f  <- newName "f"
+  xs <- replicateM n (newName "x")
+  let args = map VarP (f:xs)
+      ntup = TupE (map VarE xs)
+  return $ LamE args (AppE (VarE f) ntup)
+
+genCurries :: Int -> Q [Dec]
+genCurries n = forM [1..n] mkCurryDec
+  where mkCurryDec ith = do
+          cury <- curryN ith
+          let name = mkName $ "curry" ++ show ith
+          return $ FunD name [Clause [] (NormalB cury) []]
+
+mkPure :: String -> Q [Dec]
+mkPure n = do
+  arg <- newName "x"
+  let fnName = mkName $ n ++ "Server"
+  -- return $ [FunD fnName [Clause [] (NormalB $ LamE [VarP arg] (AppE (VarE (mkName "pure")) (VarE arg)) ) [] ]]
+  return $ [FunD fnName [Clause [] (NormalB $ (VarE (mkName "pure")) ) [] ]]
+
+mkServer :: String -> String -> Int -> Q [Dec]
+mkServer fn apiName size = do
+  let fnName = mkName fn
+  let args = foldl (\l r -> UInfixE l (ConE $ mkName ":<|>") r) (VarE $ mkName "pure") (replicate (size-1) (VarE $ mkName "pure"))
+
+  return $
+    [ SigD fnName (AppT (ConT $ mkName "Server") (ConT $ mkName apiName))
+--    , FunD fnName [Clause [] (NormalB $ (VarE $ mkName "pure") `AppE` (ConE $ mkName "(:<|>)") `AppE` (VarE $ mkName "pure") ) [] ]]
+--    , FunD fnName [Clause [] (NormalB $ UInfixE (VarE $ mkName "pure") (ConE $ mkName ":<|>") (VarE $ mkName "pure") ) [] ]]
+
+    , FunD fnName [Clause [] (NormalB args ) [] ]]
+{-
+UInfixE
+
+type family Returns (lst :: [*]) where
+  Returns
+
+class Returns (lst :: [*]) where
+  -- returns :: Server (InAndOutAPI lst)
+  returns :: Server (InAndOutAPI lst)
+
+instance Returns '[t] where
+  returns = return
+
+-- haven't been able to get this to work yet
+instance Returns ts => Returns (t ': ts) where
+  returns = return :<|> (returns ts)
+-}                  
 {-
 class Returns (lst :: [*]) where
   returns :: Server (InAndOutAPI lst)
