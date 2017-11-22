@@ -100,13 +100,7 @@ testAPI5 = Proxy
 app5 :: Application
 app5 = serve testAPI5 server5
 
-$(genCurries 20)
-$(mkPure "thing")
-{- curry1 -}
-
 main = do
-  r <- thingServer 1
-  print r
   run 8081 app5
 
 -- server1
